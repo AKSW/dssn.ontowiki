@@ -182,46 +182,26 @@ class DssnController extends OntoWiki_Controller_Component {
 
         try {
             $factory  = new DSSN_Activity_Factory($this->_owApp);
-            
-            $type = $this->_request->getParam('activity-type');
-            $activity = null;
-            switch ($type) {
-                case 'status':
-                    $activity = $factory->newStatus(
-                        (string)$this->_request->getParam('share-status'),
-                        $this->_privateConfig->defaults->webId,
-                        $this->_privateConfig->defaults->username
-                    );
-                    break;
-                case 'link':
-                    $activity = $factory->newSharedLink(
-                        (string)$this->_request->getParam('share-link-url'),
-                        (string)$this->_request->getParam('share-link-name'),
-                        $this->_privateConfig->defaults->webId,
-                        $this->_privateConfig->defaults->username
-                    );
-                    break;
-            }
+            $activity = $factory->newFromShareItModule($this->_request);
 
-            if (null !== $activity) {
-                $model  = $this->model;
-                $store  = $this->_owApp->erfurt->getStore();
-                $store->addMultipleStatements((string) $model, $activity->toRDF());
+            $model  = $this->model;
+            $store  = $this->_owApp->erfurt->getStore();
+            $store->addMultipleStatements((string) $model, $activity->toRDF());
 
-                $event = new Erfurt_Event('onInternalFeedDidChange');
-                $event->feedUrl = $this->_owApp->getUrlBase() . 'dssn/feed';
-                $event->trigger();
+            $event = new Erfurt_Event('onInternalFeedDidChange');
+            $event->feedUrl = $this->_owApp->getUrlBase() . 'dssn/feed';
+            $event->trigger();
 
-                $output   = array (
-                    'message' => 'Activity saved',
-                    'class'   => 'success'
-                );
+            $output   = array (
+                'message' => 'Activity saved',
+                'class'   => 'success'
+            );
 
-                // create an event so that the hub can send the data
-                #$event = new Erfurt_Event('pubsub-onFeedChange');
-                #$event->feedUrl = $this->_config->urlBase . '/dssn/feed';
-                #$event->trigger();
-            }
+            // create an event so that the hub can send the data
+            $event = new Erfurt_Event('pubsub-onFeedChange');
+            $event->feedUrl = $this->_config->urlBase . '/dssn/feed';
+            $event->trigger();
+
         } catch (Exception $e) {
             // encode the exception for http response
             $output = array (
@@ -308,13 +288,12 @@ class DssnController extends OntoWiki_Controller_Component {
      * 
      * @return DSSN_Foaf_Person the current me or null
      */
-    public function getMe(){
+    public static function getMe(){
         if(!isset(OntoWiki::getInstance()->selectedModel)){
             return null;
         }
         if(self::$me == null){
-            self::_log(OntoWiki::getInstance()->selectedModel);
-            self::$me = new DSSN_Foaf_Person($this->_privateConfig->defaults->webId);
+            self::$me = new DSSN_Foaf_Person(OntoWiki::getInstance()->selectedModel, true);
         } 
         return self::$me;
     }
@@ -327,7 +306,7 @@ class DssnController extends OntoWiki_Controller_Component {
      * @param DSSN_Foaf_Person $me
      * @param string $friendUri
      * @param Erfurt_Store $store
-     * @param Erfurt_Rdf_Model $graph 
+     * @param Erfurt_Rdf_Model $meGraph 
      */
     public static function handleNewFriend($me, $friendUri, $store, $meGraph){
         
@@ -833,9 +812,6 @@ class DssnController extends OntoWiki_Controller_Component {
             // re-add the list to the page
             $helper->addList($listname, $list, $this->view, $template, $config);
         }
-
-        //var_dump((string) $list->getResourceQuery());
-        //var_dump((string) $list->getQuery());
     }
 
 

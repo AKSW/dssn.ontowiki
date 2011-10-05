@@ -1,10 +1,10 @@
-<li class="has-contextmenu-area foaf-person <?php if ($this->odd) {echo "odd";} else {echo "even";} ?>">
+<li class="has-contextmenu-area foaf-person <?php if ($this->odd) {echo "odd";} else {echo "even";} ?>" about="<?php echo $this->instance['uri']; ?>">
  <span class="pic">
         <?php 
-        $picUrl = "http://www.jsmemladi.cz/wp-content/uploads/facebook_no_profile_pic2.gif";
-        if (isset($this->instanceData['img'])){
+        $picUrl = 'http://www.jsmemladi.cz/wp-content/uploads/facebook_no_profile_pic2.gif';
+        if (isset($this->instanceData['img']) && !empty ($this->instanceData['img'][0]['uri'])){
             $picUrl = $this->instanceData['img'][0]['uri'];
-        } else if (isset($this->instanceData['depiction'])){
+        } else if (isset($this->instanceData['depiction']) && !empty ($this->instanceData['depiction'][0]['uri'])){
             $picUrl = $this->instanceData['depiction'][0]['uri'];
         }
         ?>
@@ -13,7 +13,8 @@
     </span>
     <span class="name">
         <?php 
-        $name = "";
+        //try to build a name from all the foaf properties related to names
+        $name = '';
         if (isset($this->instanceData['name'])){
             $name = $this->instanceData['name'][0]['uri']; 
         } else {
@@ -29,15 +30,23 @@
             }
         } 
         if (isset($this->instanceData['nick']) && $this->instanceData['nick'][0]['value'] != $name){
-            if($name == ""){
+            if(empty($name)){
                 $name = $this->instanceData['nick'][0]['value']; 
             } else {
                 $name .= ' ('.$this->instanceData['nick'][0]['value'].')'; 
             }
         } 
+        if(empty($name)){
+            echo '[no name] ('.$this->instance['uri'].')';
+        }
         echo $name;
         ?>
     </span>
+    <?php
+      if(!empty($this->instanceData['status'])){
+          ?><br/><span class="status"><i><?php echo $this->instanceData['status'][0]['value']; ?></i></span><?php
+      }
+    ?>
 <div class="contextmenu">
     <a class="item rdfauthor-edit-property" onclick="dssnNetworkOptions(event);">
         <span class="icon icon-edit" title="Options"><span>Options</span></span>

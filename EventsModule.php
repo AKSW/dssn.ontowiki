@@ -41,7 +41,7 @@ class EventsModule extends OntoWiki_Module
             if($birthdayTime < $now){
                 $birthdayTime += 60*60*24*365; //TODO use +1year
             }
-            if(($birthdayTime - $now) < 60*60*24*7){
+            if(($birthdayTime - $now) < 60*60*24*7){ //birthdays in the next week
                 $this->birthdays[] = array(
                     // resource will used to link to the friends page
                     'resource' => $uri,
