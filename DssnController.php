@@ -428,6 +428,110 @@ class DssnController extends OntoWiki_Controller_Component {
             
             return array('mandatories'=>$importResult, 'optionals'=>$optionals);
     }
+    
+    /**
+     * remove a import
+     * 
+     * API method
+     * 
+     * @param DSSN_Foaf_Person $me
+     * @param string $friendUri
+     * @param Erfurt_Store $store
+     * @param Erfurt_Rdf_Model $graph 
+     */
+    public static function handleDeletedFriend($me, $friendUri, $store, $meGraph){
+        
+        $importIntoGraphUri = $friendUri;
+        //TODO: check. i dont use the erfurt "singleton" versioning object, but a new one, 
+            //because inside  DatagatheringController::import the erfurt versioning object is used, 
+            //which throws an error (action already started) - what about nested transactions?
+            /*require_once 'Erfurt/Versioning.php';
+            $versioning = new Erfurt_Versioning();
+            $versioning->startAction(array(
+                'type' => '9000',
+                'modeluri' => $importIntoGraphUri,
+                'resourceuri' => $importIntoGraphUri
+            ));*/
+            $ow = OntoWiki::getInstance();
+            
+            //get feed - everything below here (until the error check) is considered optional
+            $feedQueryResult = $store->sparqlQuery('SELECT ?feed FROM <'.$importIntoGraphUri.'> WHERE {<'.$importIntoGraphUri.'> <http://purl.org/net/dssn/activityFeed> ?feed }');
+            
+            $topicUrl = null;
+            if(is_array($feedQueryResult) && !empty ($feedQueryResult)){
+                $topicUrl = $feedQueryResult[0]['feed'];
+            }
+            
+            //try to get the hub from the feed
+            require_once $ow->extensionManager->getExtensionPath("pubsub") . DIRECTORY_SEPARATOR . "PubsubController.php";
+            $unsubsribeResult = PubsubController::SUBSCRIPTION_OK;
+            $hubUrl = null;
+            if (null !== $topicUrl) {
+                try {
+                    self::_log($topicUrl);
+                    $feed = new Zend_Feed_Atom($topicUrl);
+                    
+                    $hubUrl = $feed->link('hub');
+                    if (null == $hubUrl) {
+                        $unsubsribeResult = PubsubController::SUBSCRIPTION_NO_HUB;
+                    }
+                } catch (Exception $e) {
+                    self::_log((string)$e);
+                    $unsubsribeResult = PubsubController::SUBSCRIPTION_FEED_UNREACHEABLE;
+                }
+            } else {
+                $unsubsribeResult = PubsubController::SUBSCRIPTION_NO_FEED;
+            }
+            
+            //unsubscribe at that hub for that feed
+            if (null !== $hubUrl) {
+                //subscribe to its feed
+                $callbackUrl = PubsubController::getCallbackUrl();
+                require_once $ow->extensionManager->getExtensionPath('pubsub') . DIRECTORY_SEPARATOR . 'lib'. DIRECTORY_SEPARATOR . 'subscriber.php';
+                $s = new Subscriber($hubUrl, $callbackUrl);
+                ob_start();
+                $response = $s->unsubscribe($topicUrl);
+                $result = ob_get_clean();
+
+                if ($response == false) {
+                    $unsubsribeResult = PubsubController::SUBSCRIPTION_FAILED;
+                }
+            }
+            
+            // delete model
+            if (!$store->isModelAvailable($importIntoGraphUri)){
+                
+                $graph = $store->deleteModel($importIntoGraphUri, false);
+                
+                $config = $ow->config;
+                
+                //undeclare import of new model to current
+                $meGraph->unsetOptionValue($config->sysont->properties->hiddenImports, array(
+                            'value'    => $importIntoGraphUri,
+                            'type'     => 'uri'
+                        ), false); // false -> do not replace other imports
+                
+                
+                //delete connection to that person?
+                $store->deleteMatchingStatements($meGraph, $me->uri, DSSN_FOAF_knows, $friendUri);
+            } 
+            
+            return $unsubsribeResult;
+    }
+    
+    /**
+     * process a friend remove with UI
+     */
+    public function deletefriendAction()
+    {
+        $me = self::getMe();
+        $store = $this->_erfurt->getStore();
+        
+        if(($friendUri = $this->getParam("friendUrl")) != null){
+                        
+            $ret = self::handleNewFriend($me, $friendUri, $store, $this->_owApp->selectedModel);
+        }
+    }
 
     
     /**
