@@ -26,6 +26,25 @@
  */
 function dssnActivityOptions(event) {
     //alert('create menu here');
+    var json = {
+        'Comment this activity': urlBase+'dssn/news',
+        'Like this activity': urlBase+'dssn/news',
+        'Delete this activity': urlBase+'dssn/news',
+        'Re-share this resource': urlBase+'dssn/news',
+        'Comment this resource': urlBase+'dssn/news',
+        'Like this resource': urlBase+'dssn/news',
+        'Ignore activities from this user': urlBase+'dssn/news',
+        'Ignore activities of this type': urlBase+'dssn/news',
+        'Ignore this type of activities from this user': urlBase+'dssn/news'
+    }; 
+    showResourceMenu(event, json)
+    event.preventDefault();
+}
+
+function dssnNetworkOptions(event){
+    var li = $(event.target).parent().parent().parent();
+    var json = {'Delete Friend': urlBase+'dssn/deletefriend?uri='+li.attr('about')}; 
+    showResourceMenu(event, json)
     event.preventDefault();
 }
 
