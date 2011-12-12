@@ -433,7 +433,7 @@ class DssnController extends OntoWiki_Controller_Component {
             $ow = OntoWiki::getInstance();
             
             //get feed - everything below here (until the error check) is considered optional
-            $feedQueryResult = $store->sparqlQuery('SELECT ?feed FROM <'.$importIntoGraphUri.'> WHERE {<'.$importIntoGraphUri.'> <http://purl.org/net/dssn/activityFeed> ?feed }');
+            $feedQueryResult = $store->sparqlQuery('SELECT ?feed FROM <'.$importIntoGraphUri.'> WHERE {<'.$importIntoGraphUri.'> <http://purl.org/net/dssn/activityFeed> ?feed . } ');
             
             $topicUrl = null;
             if(is_array($feedQueryResult) && !empty ($feedQueryResult)){
@@ -491,8 +491,11 @@ class DssnController extends OntoWiki_Controller_Component {
             } 
 
             //delete connection to that person?
-            $store->deleteMatchingStatements($meGraph, $me->uri, DSSN_FOAF_knows, $friendUri);
+            $object = array('type' => 'uri', 'value' => $friendUri);
+            $store->deleteMatchingStatements($meGraph, $me->uri, DSSN_FOAF_knows, $object);
             
+var_dump($unsubsribeResult); die;
+
             return $unsubsribeResult;
     }
     
@@ -506,7 +509,7 @@ class DssnController extends OntoWiki_Controller_Component {
         
         if(($friendUri = $this->getParam("friendUrl")) != null){
                         
-            $ret = self::handleNewFriend($me, $friendUri, $store, $this->_owApp->selectedModel);
+            $ret = self::handleDeletedFriend($me, $friendUri, $store, $this->_owApp->selectedModel);
         }
     }
 

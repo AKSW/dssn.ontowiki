@@ -43,7 +43,7 @@ function dssnActivityOptions(event) {
 
 function dssnNetworkOptions(event){
     var li = $(event.target).parent().parent().parent();
-    var json = {'Delete Friend': urlBase+'dssn/deletefriend?uri='+li.attr('about')}; 
+    var json = {'Delete Friend': urlBase+'dssn/deletefriend?friendUrl='+li.attr('about')}; 
     showResourceMenu(event, json)
     event.preventDefault();
 }
