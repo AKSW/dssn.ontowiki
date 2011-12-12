@@ -344,11 +344,10 @@ class DssnController extends OntoWiki_Controller_Component {
                             'value'    => $importIntoGraphUri,
                             'type'     => 'uri'
                         )), false); // false -> do not replace other imports
-                
-                
-                //connect me to that person
-                $store->addStatement($meGraph->getModelIri(), $me->uri, DSSN_FOAF_knows, array('value'=>$friendUri, 'type'=>'uri'));
-            } 
+            }
+
+            //connect me to that person
+            $store->addStatement($meGraph->getModelIri(), $me->uri, DSSN_FOAF_knows, array('value'=>$friendUri, 'type'=>'uri'));
                 
             //fill new model via linked data
             require_once $ow->extensionManager->getExtensionPath('datagathering') . DIRECTORY_SEPARATOR . 'DatagatheringController.php';
