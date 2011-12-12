@@ -488,11 +488,10 @@ class DssnController extends OntoWiki_Controller_Component {
                             'value'    => $importIntoGraphUri,
                             'type'     => 'uri'
                         ), false); // false -> do not replace other imports
-                
-                
-                //delete connection to that person?
-                $store->deleteMatchingStatements($meGraph, $me->uri, DSSN_FOAF_knows, $friendUri);
             } 
+
+            //delete connection to that person?
+            $store->deleteMatchingStatements($meGraph, $me->uri, DSSN_FOAF_knows, $friendUri);
             
             return $unsubsribeResult;
     }
